@@ -36,6 +36,20 @@ def slugify(text):
     return text
 
 
+def is_greek_text(text):
+    """
+    Check if text contains Greek characters.
+    Returns True if any character is in Unicode Greek ranges.
+    """
+    for char in text:
+        # Greek and Coptic (U+0370–U+03FF)
+        # Greek Extended (U+1F00–U+1FFF)
+        code_point = ord(char)
+        if (0x0370 <= code_point <= 0x03FF) or (0x1F00 <= code_point <= 0x1FFF):
+            return True
+    return False
+
+
 def truncate_summary(text, max_length=300):
     """Truncate text to max_length, ending at sentence boundary if possible"""
     if len(text) <= max_length:
@@ -155,12 +169,12 @@ def fetch_commons_images(keyword, max_images, type_name, slug, session):
         return []
 
 
-def fetch_wikipedia_summary(keyword, session):
+def fetch_wikipedia_summary_rest(keyword, lang, session):
     """
-    Fetch Wikipedia summary for a keyword.
+    Fetch Wikipedia summary using REST API.
     Returns (title, extract) tuple or None if not found/disambiguation.
     """
-    base_url = "https://en.wikipedia.org/api/rest_v1/page/summary/"
+    base_url = f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/"
     # URL-encode the title
     encoded_title = urllib.parse.quote(keyword.replace(' ', '_'))
     url = base_url + encoded_title
@@ -169,14 +183,12 @@ def fetch_wikipedia_summary(keyword, session):
         response = session.get(url, timeout=5)
         
         if response.status_code != 200:
-            print(f"[HTTP {response.status_code}] {keyword}")
             return None
         
         data = response.json()
         
         # Skip disambiguation pages
         if data.get('type') == 'disambiguation':
-            print(f"[SKIP] {keyword}: disambiguation")
             return None
         
         title = data.get('title', keyword)
@@ -187,8 +199,80 @@ def fetch_wikipedia_summary(keyword, session):
         
         return (title, extract)
     
-    except (requests.RequestException, KeyError, ValueError) as e:
+    except (requests.RequestException, KeyError, ValueError):
         return None
+
+
+def search_wikipedia_title(keyword, lang, session):
+    """
+    Search Wikipedia for a page title using OpenSearch API.
+    Returns page title string or None if not found.
+    """
+    base_url = f"https://{lang}.wikipedia.org/w/api.php"
+    params = {
+        "action": "opensearch",
+        "search": keyword,
+        "limit": 1,
+        "namespace": 0,
+        "format": "json"
+    }
+    
+    try:
+        response = session.get(base_url, params=params, timeout=5)
+        
+        if response.status_code != 200:
+            return None
+        
+        data = response.json()
+        # OpenSearch returns: [search_term, [titles], [descriptions], [urls]]
+        if len(data) >= 2 and isinstance(data[1], list) and len(data[1]) > 0:
+            return data[1][0]
+        
+        return None
+    
+    except (requests.RequestException, KeyError, ValueError, IndexError):
+        return None
+
+
+def fetch_wikipedia_summary(keyword, session):
+    """
+    Fetch Wikipedia summary for a keyword with fallback strategy.
+    Returns (title, extract, wiki) tuple or None if not found.
+    
+    Strategy:
+    1. Try en.wikipedia REST API
+    2. If keyword is Greek and step 1 fails, try el.wikipedia REST API
+    3. If both fail, use search API to find title, then fetch summary
+    """
+    is_greek = is_greek_text(keyword)
+    
+    # Step A: Try en.wikipedia REST API
+    result = fetch_wikipedia_summary_rest(keyword, 'en', session)
+    if result:
+        title, extract = result
+        return (title, extract, 'en')
+    
+    # Step B: If Greek, try el.wikipedia REST API
+    if is_greek:
+        result = fetch_wikipedia_summary_rest(keyword, 'el', session)
+        if result:
+            title, extract = result
+            return (title, extract, 'el')
+    
+    # Step C: Use search API to find title, then fetch summary
+    # Choose language based on whether keyword is Greek
+    search_lang = 'el' if is_greek else 'en'
+    found_title = search_wikipedia_title(keyword, search_lang, session)
+    
+    if found_title:
+        # Fetch summary for the found title
+        result = fetch_wikipedia_summary_rest(found_title, search_lang, session)
+        if result:
+            title, extract = result
+            search_suffix = f"search->{search_lang}"
+            return (title, extract, search_suffix)
+    
+    return None
 
 
 def main():
@@ -275,13 +359,14 @@ def main():
             result = fetch_wikipedia_summary(keyword, session)
             
             if result:
-                wiki_title, wiki_extract = result
+                wiki_title, wiki_extract, wiki_lang = result
                 truncated_summary = truncate_summary(wiki_extract, max_length=300)
                 enrich_map[slug]['summary'] = truncated_summary
+                enrich_map[slug]['wiki'] = wiki_lang
                 # Use Wikipedia title if available (and different from keyword)
                 if wiki_title and wiki_title != keyword:
                     enrich_map[slug]['title'] = wiki_title
-                print(f"[OK] {keyword}: summary found")
+                print(f"[OK] {keyword}: summary found ({wiki_lang})")
             else:
                 print(f"[SKIP] {keyword}: no page / disambiguation")
                 # Keep "TODO" as summary
