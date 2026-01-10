@@ -661,6 +661,58 @@ main {
     overflow-wrap: anywhere;
 }
 
+.result-enrichment {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.result-enrichment-summary {
+    font-size: var(--text-base);
+    font-weight: var(--weight-regular);
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.result-enrichment-images {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.result-enrichment-image {
+    flex: 1;
+    min-width: 120px;
+    max-width: 200px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+@media (max-width: 600px) {
+    .result-enrichment-image {
+        min-width: 100px;
+        max-width: 160px;
+        height: 120px;
+    }
+}
+
+.result-enrichment-attribution {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+.result-enrichment-fallback {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-style: italic;
+}
+
 /* Result actions (Replay/Copy buttons) */
 .result-actions {
     display: flex;
@@ -824,6 +876,21 @@ main {
 
 .modal-card h3:first-of-type {
     margin-top: 14px;
+}
+
+.recipe-thumbnail {
+    margin: 0 0 14px 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    max-width: 280px;
+    background: var(--color-card);
+}
+
+.recipe-thumbnail-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
 }
 
 .recipe-meta {

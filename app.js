@@ -34,6 +34,7 @@ const resultActions = document.getElementById("resultActions");
 const replayBtn = document.getElementById("replayBtn");
 const recipeBtn = document.getElementById("recipeBtn");
 const recipeModal = document.getElementById("recipeModal");
+const recipeThumbnail = document.getElementById("recipeThumbnail");
 const recipeTitle = document.getElementById("recipeTitle");
 const recipeMeta = document.getElementById("recipeMeta");
 const recipeIngredients = document.getElementById("recipeIngredients");
@@ -44,6 +45,46 @@ const recipeCopyBtn = document.getElementById("recipeCopyBtn");
 
 // Store current recipe copy text
 let currentRecipeCopyText = "";
+
+// Enrichment cache (loaded on init)
+window.__ENRICH_CACHE__ = null;
+
+// Helper: Convert text to URL-friendly slug (matching Python slugify logic)
+function slugify(text) {
+    if (!text) return "";
+    // Normalize Unicode (NFD = decomposed form)
+    let normalized = text.normalize('NFD');
+    // Remove accent marks (combining characters)
+    normalized = normalized.replace(/[\u0300-\u036f]/g, '');
+    // Convert to lowercase
+    normalized = normalized.toLowerCase();
+    // Replace spaces with hyphens
+    normalized = normalized.replace(/\s+/g, '-');
+    // Remove any non-alphanumeric/hyphen characters
+    normalized = normalized.replace(/[^a-z0-9\-]/g, '');
+    // Remove multiple consecutive hyphens
+    normalized = normalized.replace(/-+/g, '-');
+    // Remove leading/trailing hyphens
+    normalized = normalized.replace(/^-+|-+$/g, '');
+    return normalized;
+}
+
+// Helper: Get enrichment by slug
+function getEnrichmentBySlug(slug) {
+    if (!window.__ENRICH_CACHE__ || !slug) return null;
+    return window.__ENRICH_CACHE__[slug] || null;
+}
+
+// Helper: Get slug from result (use existing id/slug if present, else derive from label)
+function getSlugFromResult(result) {
+    if (!result) return null;
+    // If result already has a slug/id that matches enrich keys, use it
+    if (result.id && window.__ENRICH_CACHE__ && window.__ENRICH_CACHE__[result.id]) {
+        return result.id;
+    }
+    // Otherwise derive from label
+    return slugify(result.label);
+}
 
 // Check if desktop viewport
 function isDesktop() {
@@ -942,10 +983,67 @@ function renderResult() {
     const hasFinal = !!state.lastResult;
     const isPending = !!state.pendingResult;
     
-    if (state.lastResult) {
-        resultContainer.innerHTML = `<div class="result-content" style="font-size: 1.5rem; font-weight: 600; color: #000;">Η τύχη διάλεξε: ${state.lastResult.label}</div>`;
-    } else if (state.pendingResult) {
+    // STRICT: Do NOT show anything while pendingResult === true
+    if (isPending) {
         resultContainer.innerHTML = `<div class="result-content" style="font-size: 1.5rem; font-weight: 600; color: #666;">Η τύχη αποφασίζει…</div>`;
+        resultActions.hidden = true;
+        recipeBtn.hidden = true;
+        return;
+    }
+    
+    if (state.lastResult) {
+        const result = state.lastResult;
+        let html = `<div class="result-content" style="font-size: 1.5rem; font-weight: 600; color: #000;">Η τύχη διάλεξε: ${result.label}</div>`;
+        
+        // Show enrichment details for Travel & Fun (only when final result is locked)
+        if (state.categoryId === "travel" || state.categoryId === "fun") {
+            const slug = getSlugFromResult(result);
+            const enrich = slug ? getEnrichmentBySlug(slug) : null;
+            
+            if (enrich) {
+                html += '<div class="result-enrichment">';
+                
+                // Summary
+                if (enrich.summary) {
+                    html += `<div class="result-enrichment-summary">${enrich.summary}</div>`;
+                }
+                
+                // Images
+                if (enrich.images && Array.isArray(enrich.images) && enrich.images.length > 0) {
+                    const maxImages = state.categoryId === "travel" ? 3 : 2;
+                    const imagesToShow = enrich.images.slice(0, maxImages);
+                    
+                    html += '<div class="result-enrichment-images">';
+                    imagesToShow.forEach(img => {
+                        if (img.src) {
+                            html += `<img src="${img.src}" alt="${enrich.title || result.label}" loading="lazy" class="result-enrichment-image">`;
+                        }
+                    });
+                    html += '</div>';
+                    
+                    // Attribution
+                    const attributions = imagesToShow
+                        .map(img => {
+                            if (!img.author || !img.license) return null;
+                            // Strip HTML tags from author for display
+                            const authorText = img.author.replace(/<[^>]*>/g, '');
+                            return `${authorText} (${img.license})`;
+                        })
+                        .filter(Boolean);
+                    
+                    if (attributions.length > 0) {
+                        html += `<div class="result-enrichment-attribution">Photo: ${attributions.join(', ')}</div>`;
+                    }
+                }
+                
+                html += '</div>';
+            } else {
+                // No enrichment: show fallback text
+                html += '<div class="result-enrichment"><div class="result-enrichment-fallback">Πληροφορίες σύντομα</div></div>';
+            }
+        }
+        
+        resultContainer.innerHTML = html;
     } else {
         resultContainer.innerHTML = "";
     }
@@ -1248,10 +1346,32 @@ function handleRecipe() {
     const id = state.lastResult.id;
     const recipe = RECIPES?.[id];
     
-    // Clear lists
+    // Clear lists and thumbnail
+    recipeThumbnail.innerHTML = "";
     recipeIngredients.innerHTML = "";
     recipeSteps.innerHTML = "";
     recipeTips.innerHTML = "";
+    
+    // Handle thumbnail: recipe.image first, else enrichment, else nothing
+    let thumbnailSrc = null;
+    if (recipe?.image) {
+        thumbnailSrc = recipe.image;
+    } else {
+        const slug = getSlugFromResult(state.lastResult);
+        const enrich = slug ? getEnrichmentBySlug(slug) : null;
+        if (enrich?.images && Array.isArray(enrich.images) && enrich.images.length > 0 && enrich.images[0].src) {
+            thumbnailSrc = enrich.images[0].src;
+        }
+    }
+    
+    if (thumbnailSrc) {
+        const img = document.createElement("img");
+        img.src = thumbnailSrc;
+        img.alt = recipe?.title || state.lastResult.label || "Recipe";
+        img.loading = "lazy";
+        img.className = "recipe-thumbnail-img";
+        recipeThumbnail.appendChild(img);
+    }
     
     if (!recipe) {
         const fallbackTitle = state.lastResult?.label || "Συνταγή";
@@ -1356,7 +1476,7 @@ window.addEventListener("resize", () => {
 });
 
 // Initialize
-function init() {
+async function init() {
     // Add pageFx element to DOM
     if (!document.getElementById('pageFx')) {
         const pageFx = document.createElement('div');
@@ -1364,6 +1484,19 @@ function init() {
         pageFx.className = 'pagefx';
         pageFx.setAttribute('aria-hidden', 'true');
         document.body.appendChild(pageFx);
+    }
+    
+    // Load enrichment data
+    try {
+        const response = await fetch('data/enrich/enrich.json');
+        if (response.ok) {
+            window.__ENRICH_CACHE__ = await response.json();
+        } else {
+            window.__ENRICH_CACHE__ = {};
+        }
+    } catch (error) {
+        console.warn('Failed to load enrichment data:', error);
+        window.__ENRICH_CACHE__ = {};
     }
     
     render();
