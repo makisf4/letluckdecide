@@ -9,7 +9,7 @@ import { RECIPES } from './recipes.js';
 // Constants
 const RECENT_LIMIT = 20;
 const PAGE_FX_ENABLED = true;
-const PAGE_FX_DURATION = 520; // ms
+const PAGE_FX_DURATION = 820; // ms
 const PAGE_FX_EFFECTS = ['fade', 'wipe', 'curtain', 'shutter', 'diagonal', 'iris', 'tile', 'slide'];
 
 // State
@@ -211,7 +211,7 @@ async function runPageFxTransition({ onMidSwap }) {
     
     el.className = `pagefx pagefx--${effect}`;
     el.style.display = 'block';
-    el.style.animationDuration = `${PAGE_FX_DURATION}ms`;
+    el.style.setProperty('--pagefx-duration', `${PAGE_FX_DURATION}ms`);
     
     // Start animation (CSS handles keyframes)
     // Mid-swap roughly at 48%
@@ -243,9 +243,9 @@ function animateGridTransition(renderNext) {
     }
     
     // Timing constants
-    const EXIT_MS = 650;
+    const EXIT_MS = 420;
     const GAP_MS = 220;
-    const ENTER_MS = 650;
+    const ENTER_MS = 420;
     const MAX_STAGGER_EXIT = 260;
     const MAX_STAGGER_ENTER = 220;
     const EXIT_TOTAL_MS = EXIT_MS + MAX_STAGGER_EXIT; // 910ms fixed

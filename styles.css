@@ -43,7 +43,11 @@
     --radius-md: 18px;
     
     /* Transitions */
-    --transition-fast: 0.18s ease;
+    --transition-fast: 220ms;
+    --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
+    --t-fast: 220ms;
+    --t-medium: 420ms;
+    --t-slow: 620ms;
     
     /* Typography scale */
     --text-xs: 0.75rem;
@@ -166,11 +170,11 @@ main {
     cursor: pointer;
     text-align: center;
     box-shadow: var(--shadow-sm);
-    transition: transform 650ms cubic-bezier(.16, 1, .3, 1),
-                opacity 650ms cubic-bezier(.16, 1, .3, 1),
-                border-color var(--transition-fast),
-                background var(--transition-fast),
-                box-shadow var(--transition-fast);
+    transition: transform var(--t-medium) var(--ease-standard),
+                opacity var(--t-medium) var(--ease-standard),
+                border-color var(--t-fast) var(--ease-standard),
+                background var(--t-fast) var(--ease-standard),
+                box-shadow var(--t-fast) var(--ease-standard);
     will-change: transform, opacity;
     line-height: 1.4;
     max-width: 100%;
@@ -1039,7 +1043,7 @@ footer {
 
 .pagefx--fade {
     background: var(--pagefx-bg);
-    animation: pagefx-fade 520ms ease-in-out both;
+    animation: pagefx-fade var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 /* Wipe (left to right) */
@@ -1051,7 +1055,7 @@ footer {
 
 .pagefx--wipe {
     background: var(--pagefx-bg);
-    animation: pagefx-wipe 520ms ease-in-out both;
+    animation: pagefx-wipe var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 /* Diagonal wipe */
@@ -1063,7 +1067,7 @@ footer {
 
 .pagefx--diagonal {
     background: var(--pagefx-bg);
-    animation: pagefx-diagonal 520ms ease-in-out both;
+    animation: pagefx-diagonal var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 /* Curtain split */
@@ -1083,12 +1087,12 @@ footer {
 
 .pagefx--curtain::before {
     left: 0;
-    animation: pagefx-curtain-left 520ms ease-in-out both;
+    animation: pagefx-curtain-left var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 .pagefx--curtain::after {
     right: 0;
-    animation: pagefx-curtain-right 520ms ease-in-out both;
+    animation: pagefx-curtain-right var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 @keyframes pagefx-curtain-left {
@@ -1128,7 +1132,7 @@ footer {
         transparent 8%,
         transparent 16%
     );
-    animation: pagefx-shutter 520ms ease-in-out both;
+    animation: pagefx-shutter var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 /* Iris (circle) */
@@ -1140,7 +1144,7 @@ footer {
 
 .pagefx--iris {
     background: var(--pagefx-bg);
-    animation: pagefx-iris 520ms ease-in-out both;
+    animation: pagefx-iris var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 /* Tile (mosaic) */
@@ -1165,7 +1169,7 @@ footer {
         linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px),
         linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
     background-size: 40px 40px;
-    animation: pagefx-tile 520ms steps(8, end) both;
+    animation: pagefx-tile var(--pagefx-duration, 820ms) steps(8, end) both;
 }
 
 /* Slide wash */
@@ -1177,7 +1181,7 @@ footer {
 
 .pagefx--slide {
     background: var(--pagefx-bg);
-    animation: pagefx-slide 520ms ease-in-out both;
+    animation: pagefx-slide var(--pagefx-duration, 820ms) ease-in-out both;
 }
 
 
