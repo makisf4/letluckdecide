@@ -1,0 +1,68 @@
+{
+  "santorini": {
+    "type": "travel",
+    "title": "Santorini",
+    "summary": "Santorini, officially Thira or Thera, is a Greek island in the southern Aegean Sea, about 125 mi (201 km) southeast from the mainland. It is the largest island of a small, circular archipelago formed by the Santorini caldera.",
+    "images": [
+      {
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/07-17-2012%20-%20Emborio%20-%20Emporio%20-%20Santorini%20-%20Greece%20-%2011.jpg?width=1200",
+        "source": "https://commons.wikimedia.org/wiki/File:07-17-2012_-_Emborio_-_Emporio_-_Santorini_-_Greece_-_11.jpg",
+        "author": "<a href=\"//commons.wikimedia.org/wiki/User:NorbertNagel\" title=\"User:NorbertNagel\">Norbert Nagel</a>",
+        "license": "CC BY-SA 3.0"
+      },
+      {
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/07-17-2012%20-%20Emborio%20-%20Emporio%20-%20Santorini%20-%20Greece%20-%2016.jpg?width=1200",
+        "source": "https://commons.wikimedia.org/wiki/File:07-17-2012_-_Emborio_-_Emporio_-_Santorini_-_Greece_-_16.jpg",
+        "author": "<a href=\"//commons.wikimedia.org/wiki/User:NorbertNagel\" title=\"User:NorbertNagel\">Norbert Nagel</a>",
+        "license": "CC BY-SA 3.0"
+      },
+      {
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/07-17-2012%20-%20Emborio%20-%20Emporio%20-%20Santorini%20-%20Greece%20-%2017.jpg?width=1200",
+        "source": "https://commons.wikimedia.org/wiki/File:07-17-2012_-_Emborio_-_Emporio_-_Santorini_-_Greece_-_17.jpg",
+        "author": "<a href=\"//commons.wikimedia.org/wiki/User:NorbertNagel\" title=\"User:NorbertNagel\">Norbert Nagel</a>",
+        "license": "CC BY-SA 4.0"
+      }
+    ],
+    "links": []
+  },
+  "paris": {
+    "type": "travel",
+    "title": "Paris",
+    "summary": "Paris is the capital and largest city of France, with an estimated city population of 2,048,472 in an area of 105.4 km2 (40.7 sq mi), and a metropolitan population of 13,171,056 as of January 2025. Located on the river Seine in the centre of the Île-de-France region, it is the largest metropolitan...",
+    "images": [
+      {
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/Boulevard%20du%20Temple%20by%20Daguerre.jpg?width=1200",
+        "source": "https://commons.wikimedia.org/wiki/File:Boulevard_du_Temple_by_Daguerre.jpg",
+        "author": "<bdi><a href=\"https://en.wikipedia.org/wiki/en:Louis_Daguerre\" class=\"extiw\" title=\"w:en:Louis Daguerre\"><span title=\"French scientist, artist and photographer (1787–1851)\">Louis Daguerre</span></a></bdi>",
+        "license": "Public domain"
+      },
+      {
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/Paris%2C%20Notre%20Dame%20--%202014%20--%201458-65.jpg?width=1200",
+        "source": "https://commons.wikimedia.org/wiki/File:Paris%2C_Notre_Dame_--_2014_--_1458-65.jpg",
+        "author": "<bdi><a href=\"https://www.wikidata.org/wiki/Q34788025\" class=\"extiw\" title=\"d:Q34788025\"><span title=\"German photographer and mathematician\">Dietmar Rabich</span></a></bdi>",
+        "license": "CC BY-SA 4.0"
+      },
+      {
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/Paris%20-%20Eiffelturm%20-%20frontal%20vom%20Marsfeld.jpg?width=1200",
+        "source": "https://commons.wikimedia.org/wiki/File:Paris_-_Eiffelturm_-_frontal_vom_Marsfeld.jpg",
+        "author": "<a href=\"//commons.wikimedia.org/wiki/User:Taxiarchos228\" title=\"User:Taxiarchos228\">Taxiarchos228</a>",
+        "license": "CC BY 3.0"
+      }
+    ],
+    "links": []
+  },
+  "pastitsio": {
+    "type": "food",
+    "title": "Pastitsio",
+    "summary": "Pastitsio is a baked pasta dish with ground meat and béchamel sauce, which came from the Ionian Islands to Greece, variations of the dish found in other countries near the Mediterranean Sea.",
+    "images": [
+      {
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/2019%20Marin%20Greek%20Festival%20-%20Sarah%20Stierch%2003.jpg?width=1200",
+        "source": "https://commons.wikimedia.org/wiki/File:2019_Marin_Greek_Festival_-_Sarah_Stierch_03.jpg",
+        "author": "<a href=\"//commons.wikimedia.org/wiki/User:Missvain\" title=\"User:Missvain\">Missvain</a>",
+        "license": "CC BY 4.0"
+      }
+    ],
+    "links": []
+  }
+}
