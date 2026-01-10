@@ -8,6 +8,9 @@ import { RECIPES } from './recipes.js';
 
 // Constants
 const RECENT_LIMIT = 20;
+const PAGE_FX_ENABLED = true;
+const PAGE_FX_DURATION = 520; // ms
+const PAGE_FX_EFFECTS = ['fade', 'wipe', 'curtain', 'shutter', 'diagonal', 'iris', 'tile', 'slide'];
 
 // State
 let state = {
@@ -148,6 +151,9 @@ function getRootOptions() {
 // Last animation style used (for anti-repeat)
 let lastAnimStyle = null;
 
+// Last page effect used (for anti-repeat)
+let lastPageFx = null;
+
 // Helper: Pick random animation style (with anti-repeat)
 function pickAnimStyle() {
     const styles = ["fadeScale", "slideStagger", "flip", "zoomBlur", "drop", "swing", "skewSlide", "collapse"];
@@ -163,6 +169,59 @@ function pickAnimStyle() {
     
     lastAnimStyle = chosen;
     return chosen;
+}
+
+// Helper: Wait function
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Helper: Pick random page effect (with anti-repeat)
+function pickRandomPageFx() {
+    let chosen;
+    let retries = 0;
+    const maxRetries = 3;
+    
+    do {
+        const index = cryptoPickIndex(PAGE_FX_EFFECTS.length);
+        chosen = PAGE_FX_EFFECTS[index];
+        retries++;
+    } while (chosen === lastPageFx && retries < maxRetries);
+    
+    lastPageFx = chosen;
+    return chosen;
+}
+
+// Run page transition effect
+async function runPageFxTransition({ onMidSwap }) {
+    if (!PAGE_FX_ENABLED) {
+        onMidSwap();
+        return;
+    }
+    
+    const el = document.getElementById('pageFx');
+    if (!el) {
+        onMidSwap();
+        return;
+    }
+    
+    // Check for reduced motion preference
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const effect = reduce ? 'fade' : pickRandomPageFx();
+    
+    el.className = `pagefx pagefx--${effect}`;
+    el.style.display = 'block';
+    el.style.animationDuration = `${PAGE_FX_DURATION}ms`;
+    
+    // Start animation (CSS handles keyframes)
+    // Mid-swap roughly at 48%
+    await wait(PAGE_FX_DURATION * 0.48);
+    onMidSwap(); // render next page NOW
+    await wait(PAGE_FX_DURATION * 0.52);
+    
+    // cleanup
+    el.style.display = 'none';
+    el.className = 'pagefx';
 }
 
 // Guard to prevent concurrent transitions
@@ -264,11 +323,13 @@ function animateGridTransition(renderNext) {
             tile.classList.remove(`anim-${animClassBase}-out`);
         });
         
-        // Gap before rendering new content
-        setTimeout(() => {
-            // Render new content
-            renderNext();
-            
+        // Run page transition effect, then render and enter
+        runPageFxTransition({
+            onMidSwap: () => {
+                // Render new content
+                renderNext();
+            }
+        }).then(() => {
             // Apply enter animation to new tiles
             requestAnimationFrame(() => {
                 const newTiles = Array.from(wheelContainer.querySelectorAll('.choice-tile'));
@@ -307,7 +368,7 @@ function animateGridTransition(renderNext) {
                     isTransitioning = false;
                 }, ENTER_TOTAL_MS);
             });
-        }, GAP_MS);
+        });
     }, EXIT_TOTAL_MS);
 }
 
@@ -1296,6 +1357,15 @@ window.addEventListener("resize", () => {
 
 // Initialize
 function init() {
+    // Add pageFx element to DOM
+    if (!document.getElementById('pageFx')) {
+        const pageFx = document.createElement('div');
+        pageFx.id = 'pageFx';
+        pageFx.className = 'pagefx';
+        pageFx.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(pageFx);
+    }
+    
     render();
 }
 
