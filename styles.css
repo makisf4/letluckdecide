@@ -631,6 +631,18 @@ main {
     }
 }
 
+/* Mobile: Root category grid (3 items) as vertical stack */
+@media (max-width: 640px) {
+    #wheel.choice-grid.grid-3:not(.grid-leaf) {
+        grid-template-columns: 1fr;
+    }
+    
+    #wheel.choice-grid.grid-3:not(.grid-leaf) .choice-tile {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
 .result-content {
     font-size: var(--text-lg);
     font-weight: var(--weight-semibold);
