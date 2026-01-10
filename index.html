@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>letluckdecide.com</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>letluckdecide.com</h1>
+        <p class="tagline">Let luck decide.</p>
+    </header>
+
+    <main>
+        <!-- Transition overlay -->
+        <div id="transitionOverlay" class="transition-overlay" aria-hidden="true">...</div>
+        
+        <!-- Choices grid container -->
+        <div id="wheel" class="choice-grid" aria-label="Choices grid"></div>
+
+        <!-- Breadcrumbs area with Home button -->
+        <div class="breadcrumbs-container">
+            <button id="homeBtn" class="home-btn" aria-label="Αρχική">Home</button>
+            <nav id="breadcrumbs" class="breadcrumbs"></nav>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button id="backBtn" class="btn btn-back">Back</button>
+            <button id="decideBtn" class="btn btn-decide">Decide</button>
+        </div>
+
+        <!-- Result area -->
+        <div id="result" class="result"></div>
+        
+        <!-- Result actions (Replay) -->
+        <div id="resultActions" class="result-actions" hidden>
+            <button id="replayBtn" class="secondary-btn">Ξανά</button>
+        </div>
+        
+        <!-- Recipe button (only for food results) -->
+        <button id="recipeBtn" class="secondary-btn" hidden>Δες τη συνταγή</button>
+    </main>
+
+    <!-- Desktop-only affiliate panel (hidden by default) -->
+    <div id="affiliatePanel" class="affiliate-panel">
+        <h3>Χρήσιμα links</h3>
+        <ul>
+            <li><a href="#" class="affiliate-link">Link 1 (placeholder)</a></li>
+            <li><a href="#" class="affiliate-link">Link 2 (placeholder)</a></li>
+            <li><a href="#" class="affiliate-link">Link 3 (placeholder)</a></li>
+        </ul>
+    </div>
+
+    <footer>
+        <p class="disclaimer">Αυτή η σελίδα περιέχει affiliate links και ενημερωτικό περιεχόμενο.</p>
+    </footer>
+
+    <!-- Recipe Modal -->
+    <div id="recipeModal" class="modal" hidden>
+        <div class="modal-backdrop" data-close="1"></div>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-label="Συνταγή">
+            <button class="modal-close" data-close="1">✕</button>
+            <h2 id="recipeTitle"></h2>
+            <div id="recipeMeta" class="recipe-meta"></div>
+            <h3>Υλικά</h3>
+            <ul id="recipeIngredients"></ul>
+            <h3>Βήματα</h3>
+            <ol id="recipeSteps"></ol>
+            <div id="recipeTipsWrap" hidden>
+                <h3>Tips</h3>
+                <ul id="recipeTips"></ul>
+            </div>
+            <div class="modal-actions">
+                <button id="recipeCopyBtn" class="secondary-btn">Copy συνταγή</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
+
