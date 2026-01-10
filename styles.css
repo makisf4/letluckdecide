@@ -631,13 +631,15 @@ main {
     }
 }
 
-/* Mobile: Root category grid (3 items) as vertical stack */
+/* Mobile: Stack all option grids except final leaf grid */
 @media (max-width: 640px) {
-    #wheel.choice-grid.grid-3:not(.grid-leaf) {
+    #wheel.choice-grid:not(.grid-leaf) {
         grid-template-columns: 1fr;
+        width: 100%;
+        max-width: 100%;
     }
     
-    #wheel.choice-grid.grid-3:not(.grid-leaf) .choice-tile {
+    #wheel.choice-grid:not(.grid-leaf) .choice-tile {
         width: 100%;
         max-width: 100%;
     }
