@@ -75,6 +75,64 @@ def truncate_summary(text, max_length=300):
     return text[:max_length] + '...'
 
 
+def fetch_wikidata_p18_image(qid, session):
+    """
+    Fetch image from Wikidata property P18 (depicts).
+    Returns attribution object with image info, or None if not found.
+    """
+    base_url = "https://www.wikidata.org/w/api.php"
+    params = {
+        "action": "wbgetclaims",
+        "entity": qid,
+        "property": "P18",
+        "format": "json"
+    }
+    
+    try:
+        response = session.get(base_url, params=params, timeout=5)
+        
+        if response.status_code != 200:
+            return None
+        
+        data = response.json()
+        claims = data.get("claims", {})
+        p18_claims = claims.get("P18", [])
+        
+        if not p18_claims or len(p18_claims) == 0:
+            return None
+        
+        # Get the first (main) claim
+        main_claim = p18_claims[0]
+        mainsnak = main_claim.get("mainsnak", {})
+        
+        if mainsnak.get("snaktype") != "value":
+            return None
+        
+        datavalue = mainsnak.get("datavalue", {})
+        if datavalue.get("type") != "string":
+            return None
+        
+        filename = datavalue.get("value", "")
+        if not filename:
+            return None
+        
+        # Build image URLs
+        image_url = f"https://commons.wikimedia.org/wiki/Special:FilePath/{urllib.parse.quote(filename)}?width=1200"
+        source_url = f"https://commons.wikimedia.org/wiki/File:{urllib.parse.quote(filename.replace(' ', '_'))}"
+        
+        # Optionally fetch author/license from Commons (simplified for now - can enhance later)
+        # For now, leave author/license as null/empty - can be filled later if needed
+        return {
+            "src": image_url,
+            "source": source_url,
+            "author": None,  # Can be enhanced later with Commons API call
+            "license": None  # Can be enhanced later with Commons API call
+        }
+    
+    except (requests.RequestException, KeyError, ValueError, IndexError):
+        return None
+
+
 def fetch_commons_images(keyword, max_images, type_name, slug, session):
     """
     Fetch image URLs from Wikimedia Commons for a keyword.
@@ -172,7 +230,8 @@ def fetch_commons_images(keyword, max_images, type_name, slug, session):
 def fetch_wikipedia_summary_rest(keyword, lang, session):
     """
     Fetch Wikipedia summary using REST API.
-    Returns (title, extract) tuple or None if not found/disambiguation.
+    Returns (title, extract, wikibase_item) tuple or None if not found/disambiguation.
+    wikibase_item is the Q-id if present, None otherwise.
     """
     base_url = f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/"
     # URL-encode the title
@@ -193,11 +252,12 @@ def fetch_wikipedia_summary_rest(keyword, lang, session):
         
         title = data.get('title', keyword)
         extract = data.get('extract', '').strip()
+        wikibase_item = data.get('wikibase_item')  # Q-id if present
         
         if not extract:
             return None
         
-        return (title, extract)
+        return (title, extract, wikibase_item)
     
     except (requests.RequestException, KeyError, ValueError):
         return None
@@ -237,7 +297,7 @@ def search_wikipedia_title(keyword, lang, session):
 def fetch_wikipedia_summary(keyword, session):
     """
     Fetch Wikipedia summary for a keyword with fallback strategy.
-    Returns (title, extract, wiki) tuple or None if not found.
+    Returns (title, extract, wiki, wikibase_item) tuple or None if not found.
     
     Strategy:
     1. Try en.wikipedia REST API
@@ -249,15 +309,15 @@ def fetch_wikipedia_summary(keyword, session):
     # Step A: Try en.wikipedia REST API
     result = fetch_wikipedia_summary_rest(keyword, 'en', session)
     if result:
-        title, extract = result
-        return (title, extract, 'en')
+        title, extract, wikibase_item = result
+        return (title, extract, 'en', wikibase_item)
     
     # Step B: If Greek, try el.wikipedia REST API
     if is_greek:
         result = fetch_wikipedia_summary_rest(keyword, 'el', session)
         if result:
-            title, extract = result
-            return (title, extract, 'el')
+            title, extract, wikibase_item = result
+            return (title, extract, 'el', wikibase_item)
     
     # Step C: Use search API to find title, then fetch summary
     # Choose language based on whether keyword is Greek
@@ -268,9 +328,9 @@ def fetch_wikipedia_summary(keyword, session):
         # Fetch summary for the found title
         result = fetch_wikipedia_summary_rest(found_title, search_lang, session)
         if result:
-            title, extract = result
+            title, extract, wikibase_item = result
             search_suffix = f"search->{search_lang}"
-            return (title, extract, search_suffix)
+            return (title, extract, search_suffix, wikibase_item)
     
     return None
 
@@ -279,6 +339,8 @@ def main():
     parser = argparse.ArgumentParser(description='Build enrich.json from keywords.json')
     parser.add_argument('--limit', type=int, help='Process only first N keywords total')
     parser.add_argument('--force', action='store_true', help='Overwrite enrich.json if exists')
+    parser.add_argument('--type', choices=['travel', 'food', 'fun'], help='Process only this category')
+    parser.add_argument('--only', type=str, help='Process only keywords containing this substring (case-insensitive)')
     args = parser.parse_args()
 
     # Paths
@@ -318,9 +380,28 @@ def main():
     # Build enrich mapping
     processed_counts = {type_name: 0 for type_name in keywords_data.keys()}
     total_processed = 0
+    
+    # Filter categories by --type if specified
+    categories_to_process = keywords_data.keys()
+    if args.type:
+        if args.type not in categories_to_process:
+            print(f"Error: category '{args.type}' not found in keywords.json")
+            return 1
+        categories_to_process = [args.type]
+    
+    # Normalize --only substring for case-insensitive matching
+    only_substring = None
+    if args.only:
+        only_substring = args.only.casefold()
 
-    for type_name, keywords in keywords_data.items():
+    for type_name in categories_to_process:
+        keywords = keywords_data[type_name]
         for keyword in keywords:
+            # Filter by --only substring if specified (case-insensitive)
+            if only_substring:
+                if only_substring not in keyword.casefold():
+                    continue
+            
             # Apply limit if specified
             if args.limit is not None and total_processed >= args.limit:
                 break
@@ -357,12 +438,16 @@ def main():
             
             # Fetch Wikipedia summary
             result = fetch_wikipedia_summary(keyword, session)
+            wikibase_item = None
             
             if result:
-                wiki_title, wiki_extract, wiki_lang = result
+                wiki_title, wiki_extract, wiki_lang, wikibase_item = result
                 truncated_summary = truncate_summary(wiki_extract, max_length=300)
                 enrich_map[slug]['summary'] = truncated_summary
                 enrich_map[slug]['wiki'] = wiki_lang
+                # Store wikibase_item (Q-id) if present
+                if wikibase_item:
+                    enrich_map[slug]['wikidata'] = wikibase_item
                 # Use Wikipedia title if available (and different from keyword)
                 if wiki_title and wiki_title != keyword:
                     enrich_map[slug]['title'] = wiki_title
@@ -371,8 +456,14 @@ def main():
                 print(f"[SKIP] {keyword}: no page / disambiguation")
                 # Keep "TODO" as summary
             
-            # Fetch Commons images (skip if images already exist and not --force)
+            # Determine if we should fetch images and which method to use
+            current_images_source = original_entry.get('images_source', 'search')
             should_fetch_images = args.force or not original_has_images
+            # For food items, also fetch if we have P18 but current images are from search
+            if type_name == "food" and not args.force and original_has_images:
+                if wikibase_item and current_images_source == 'search':
+                    # Allow upgrade from search to P18
+                    should_fetch_images = True
             
             if should_fetch_images:
                 # Set max_images based on type
@@ -382,22 +473,46 @@ def main():
                     "food": 1
                 }.get(type_name, 1)
                 
-                images = fetch_commons_images(keyword, max_images, type_name, slug, session)
+                # For food items, try P18 first if we have wikibase_item
+                images = []
+                images_source = 'search'
                 
-                if images:
-                    enrich_map[slug]['images'] = images
-                    print(f"[OK] {keyword}: images linked {len(images)}")
-                else:
-                    print(f"[SKIP] {keyword}: no valid images")
-                    enrich_map[slug]['images'] = []
+                if type_name == "food" and wikibase_item:
+                    p18_image = fetch_wikidata_p18_image(wikibase_item, session)
+                    if p18_image:
+                        images = [p18_image]
+                        images_source = 'p18'
+                        print(f"[OK] {keyword}: food image from Wikidata P18")
+                    else:
+                        print(f"[SKIP] {keyword}: no P18, fallback to search")
+                
+                # If no P18 image, use Commons search
+                if not images:
+                    images = fetch_commons_images(keyword, max_images, type_name, slug, session)
+                    if images:
+                        images_source = 'search'
+                        print(f"[OK] {keyword}: images linked {len(images)}")
+                    else:
+                        print(f"[SKIP] {keyword}: no valid images")
+                
+                enrich_map[slug]['images'] = images
+                enrich_map[slug]['images_source'] = images_source
+            else:
+                # Keep existing images_source if we're not fetching
+                if 'images_source' not in enrich_map[slug]:
+                    enrich_map[slug]['images_source'] = current_images_source
 
             processed_counts[type_name] += 1
             total_processed += 1
             
             # Small delay between requests
             time.sleep(0.2)
-
-        # Break outer loop if limit reached
+            
+            # Break outer loop if limit reached
+            if args.limit is not None and total_processed >= args.limit:
+                break
+        
+        # Break outer category loop if limit reached
         if args.limit is not None and total_processed >= args.limit:
             break
 
